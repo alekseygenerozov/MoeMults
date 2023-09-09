@@ -245,12 +245,12 @@ def pdf_lp(m, lp, qmin):
     """
     ##Correction for low mass ratio binaries
     c1=get_corr(m, 10.**lp, qmin)
-    c2 = 1.0 - 0.11 * (lp - 1.5) ** 1.43 * (m / 10.0) ** 0.56
-    if lp <= 1.5:
-        c2 = 1.0
-    if c2 < 0:
-        c2 = 0
-    c1 = c1 * c2
+    # c2 = 1.0 - 0.11 * (lp - 1.5) ** 1.43 * (m / 10.0) ** 0.56
+    # if lp <= 1.5:
+    #     c2 = 1.0
+    # if c2 < 0:
+    #     c2 = 0
+    # c1 = c1 * c2
 
     if (lp<1) & (lp>=0.2):
         return c1*f1(m)
@@ -393,17 +393,18 @@ def gen_bin(m, pmax, qmin):
 
     return np.array([p1, sma1, e1, q1, m2])
 
+@njit("float64[:, :](float64, float64, float64, float64)")
 def gen_mult(m, pmax, qmin, ncomp):
     dlp = 0.1
     bins_lp = np.arange(0, 8.1, dlp)
     
     mults = []
     for lp in bins_lp:
-        pcomp = pdf_lp(mass1, lp, 0.1) * dlp
+        pcomp = pdf_lp(m, lp, qmin) * dlp
         ##Does it actually make sense to do this 
         ptest = np.random.uniform(0, 1)
         if ptest < pcomp: 
-            p1 = 10.**np.random.uniform(lp, lp + dp)
+            p1 = 10.**np.random.uniform(lp, lp + dlp)
             e1 = gen_e(m, p1)
             q1 = gen_q(m, p1, qmin)
             m2 = m*q1
@@ -411,8 +412,12 @@ def gen_mult(m, pmax, qmin, ncomp):
             sma1 = (p1/365.25*(mbin)**.5)**(2./3.)
 
             mults.append([p1, sma1, e1, q1, m2])
-
-    return mults
+        if len(mults) == ncomp:
+            break
+    if len(mults) > 0:
+        return np.array(mults)
+    else:
+        return np.array([[-1.0, -1.0, -1.0, -1.0, -1.0]])
 
 
 
