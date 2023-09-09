@@ -41,6 +41,25 @@ def eta(m,p):
     else:
         return eta_interp
 
+@njit('float64(float64, float64, float64)')
+def cdf_inv_ecc(x, eta, emax):
+    """
+    Inverse of cdf for eccentricity distribution with linear turnover...
+    """
+    e1 = 0.8 * emax
+    e2 = emax
+    
+    norm = 1.0 / (e1 / (eta + 1) + e2 - 0.5 * (e2**2. - e1**2.) / (e2 - e1))
+    tp = e1 / (eta + 1) * norm
+
+    if x < tp:
+        return (x * (eta + 1) / (norm) * e1**eta)**(1.0 / (eta + 1))
+    else:
+        n1 = norm   
+        return         (e2*(n1 - np.sqrt((n1*(e1*(-1 + eta)*n1 - (1 + eta)*(e2*n1 - 2*x)))/\
+                                         ((e1 - e2)*(1 + eta)))) + \
+                        e1*np.sqrt((n1*(e1*(-1 + eta)*n1 - (1 + eta)*(e2*n1 - 2*x)))/\
+                                  ((e1 - e2)*(1 + eta))))/n1
 
 @njit('float64(float64, float64)')
 def gen_e(m, p):
@@ -50,7 +69,8 @@ def gen_e(m, p):
     if eta_<-1 or np.log10(p)<0.5:
         return 0
     else:
-        return pow_samp(0, emax, -eta_)
+        x = np.random.uniform(0, 1)
+        return cdf_inv_ecc(x, eta_, emax)
 
 @njit('float64(float64)')
 def gamma_large_q_solar(p):
