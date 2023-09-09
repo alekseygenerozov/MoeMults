@@ -245,6 +245,13 @@ def pdf_lp(m, lp, qmin):
     """
     ##Correction for low mass ratio binaries
     c1=get_corr(m, 10.**lp, qmin)
+    c2 = 1.0 - 0.11 * (lp - 1.5) ** 1.43 * (m / 10.0) ** 0.56
+    if lp <= 1.5:
+        c2 = 1.0
+    if c2 < 0:
+        c2 = 0
+    c1 = c1 * c2
+
     if (lp<1) & (lp>=0.2):
         return c1*f1(m)
     elif (lp>=1) & (lp<(2.7-delta)):
