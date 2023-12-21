@@ -396,7 +396,7 @@ def gen_bin(m, pmax, qmin):
 @njit("float64[:, :](float64, float64, float64, float64)")
 def gen_mult(m, pmax, qmin, ncomp):
     dlp = 0.1
-    bins_lp = np.arange(0, 8.1, dlp)
+    bins_lp = np.arange(0, np.log10(pmax), dlp)
     
     mults = []
     for lp in bins_lp:
