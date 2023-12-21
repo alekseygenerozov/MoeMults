@@ -404,7 +404,7 @@ def gen_mult(m, pmax, qmin, ncomp):
         ##Does it actually make sense to do this 
         ptest = np.random.uniform(0, 1)
         if ptest < pcomp: 
-            p1 = 10.**np.random.uniform(lp, lp + dlp)
+            p1 = 10.**np.random.uniform(lp, min(np.log10(pmax), lp + dlp))
             e1 = gen_e(m, p1)
             q1 = gen_q(m, p1, qmin)
             m2 = m*q1
