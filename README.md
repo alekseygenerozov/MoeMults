@@ -8,8 +8,11 @@ Package requirements: numpy and numba
 
 Example: 
 
+```
 from best_fits import gen_mult
 
 gen_mult(10.0, 1e8, 0.1, 2)
 array([[9.90200198e+03, 2.08422997e+01, 1.99034686e-01, 2.31888337e-01,
         2.31888337e+00]])
+
+```
