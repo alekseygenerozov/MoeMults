@@ -23,13 +23,6 @@ def pow_samp(min1, max1, p):
 
 @njit('float64(float64, float64)')
 def eta(m,p):
-    # eta1=0.6-0.7/(np.log10(p)-0.5)
-    # if np.log10(p) < 0.7:
-    #     eta1=-0.1
-    # eta2=0.9-0.2/(np.log10(p)-0.5)
-    # if np.log10(p) < 0.7:
-    #     eta2=-2.9
-
     eta1=0.6-0.7/(np.log10(p)-0.5)
     eta2=0.9-0.2/(np.log10(p)-0.5)
     eta_interp=np.interp(m, [3,7], [eta1, eta2])
@@ -63,6 +56,13 @@ def cdf_inv_ecc(x, eta, emax):
 
 @njit('float64(float64, float64)')
 def gen_e(m, p):
+    """
+    Generate eccentricity for a given primary mass and period
+
+    :param m: Primary mass
+    :param p: Period
+    :return: Eccentricity
+    """
     emax=(1.-(p/2.)**(-2./3.))
     eta_=eta(m,p)
 
@@ -178,6 +178,14 @@ def lp_twin_max(m):
 
 @njit('float64(float64, float64)')
 def f_twin(m, p):
+    """
+    Fraction of twin (nearly equal mass) binaries for given primary mass and period.
+
+    :param m: Primary mass
+    :param p: Period
+
+    :return: Twin fraction
+    """
     lp=np.log10(p)
     lp_twin_max1=lp_twin_max(m)
     f_twin_short1=f_twin_short(m)
@@ -198,11 +206,20 @@ def get_corr(m, p, qmin):
     twin1=f_twin(m, p)
     x=(1+gsq)/(1+glq)*((1./0.3)**(1+glq)-1.)/(1-(qmin/0.3)**(1.+gsq))
 
-    # return (1.-(1-twin1)/(1+x))**-1.
     return 1. + (1. - twin1) / x
 
 @njit('float64(float64, float64, float64)')
 def gen_q(m, p, qmin):
+    """
+    Generate mass ratio between companion and primary at a given period and minimum mass ratio
+
+    :param m: Primary mass
+    :param p: Period
+    :param qmin: Minimum mass ratio
+
+    :return: Mass ratio
+    :rtype: float
+    """
     gsq=gamma_small_q(m, p)
     glq=gamma_large_q(m, p)
     ##Twin fraction is defined with respect to the high mass ratio binaries.
@@ -245,12 +262,6 @@ def pdf_lp(m, lp, qmin):
     """
     ##Correction for low mass ratio binaries
     c1=get_corr(m, 10.**lp, qmin)
-    # c2 = 1.0 - 0.11 * (lp - 1.5) ** 1.43 * (m / 10.0) ** 0.56
-    # if lp <= 1.5:
-    #     c2 = 1.0
-    # if c2 < 0:
-    #     c2 = 0
-    # c1 = c1 * c2
 
     if (lp<1) & (lp>=0.2):
         return c1*f1(m)
@@ -313,88 +324,27 @@ def get_norm(m, pmax, qmin):
     :param m: Primary mass
     :param pmax: Maximum period
     :param qmin: Minimum mass ratio
+
     :return:
     """
     lpers=np.arange(0.2, np.log10(pmax), 0.005)
     ords=[pdf_lp(m, xx, qmin) for xx in lpers]
     return np.trapz(ords, lpers)
 
-
-@njit('float64(float64, float64)')
-def pdf_lp_noc(m, lp):
-    """
-    PDF of log period of binaries for q>=0.3
-
-    :param float m: Primary mass
-    :param float lp: Log period
-    :param float qmin: Minimum mass ratio
-
-    :return: pdf
-    :rtype: float
-    """
-    ##Correction for low mass ratio binaries
-    c1=1.0
-    if (lp<1) & (lp>=0.2):
-        return c1*f1(m)
-    elif (lp>=1) & (lp<(2.7-delta)):
-        return c1*(f1(m)+(lp-1.)/(1.7-delta)*(f2(m)-f1(m)-a*delta))
-    elif (lp>=(2.7-delta)) & (lp<(2.7+delta)):
-        return c1*(f2(m)+a*(lp-2.7))
-    elif (lp>=2.7+delta) & (lp<5.5):
-        return c1*(f2(m)+a*delta+(lp-2.7-delta)/(2.8-delta)*(f3(m)-f2(m)-a*delta))
-    elif (lp>=5.5) & (lp<8.0):
-        return c1*(f3(m)*np.exp(-0.3*(lp-5.5)))
-    else:
-        return 0.
-
-@njit('float64(float64, float64)')
-def gen_period_noc(m, pmax):
-        accept=False
-        while not accept:
-                trial=np.random.uniform(0.2, np.log10(pmax))
-                if (np.random.uniform(0,1)<=pdf_lp_noc(m, trial)/0.5):
-                        accept=True
-        return 10.**trial
-
-@njit('float64(float64, float64)')
-def get_norm_noc(m, pmax):
-    lpers=np.arange(0.2, np.log10(pmax), 0.005)
-    ords=[pdf_lp_noc(m, xx) for xx in lpers]
-    return np.trapz(ords, lpers)
-
-@njit('float64[:](float64, float64, float64)')
-def gen_bin_noc(m, pmax, qmin):
-    p1=gen_period_noc(m, pmax)
-    e1=gen_e(m, p1)
-    q1=gen_q(m, p1, qmin)
-    m2=m*q1
-    mbin=m*(1+q1)
-    sma1=(p1/365.25*(mbin)**.5)**(2./3.)
-
-    return np.array([p1, sma1, e1, q1, m2])
-
-
-@njit('float64[:](float64, float64, float64)')
-def gen_bin(m, pmax, qmin):
-    """
-    Generate binary according to distributions in Moe&di Stefano 2017
-
-    :param m: Primary mass
-    :param pmax: Maximum period
-    :param qmin: Minimum mass ratio
-    :return:
-    """
-    p1=gen_period(m, pmax, qmin)
-    e1=gen_e(m, p1)
-    q1=gen_q(m, p1, qmin)
-    m2=m*q1
-    mbin=m*(1+q1)
-    sma1=(p1/365.25*(mbin)**.5)**(2./3.)
-
-    return np.array([p1, sma1, e1, q1, m2])
-
 @njit("float64[:, :](float64, float64, float64, float64)")
 def gen_mult(m, pmax, qmin, ncomp):
+    """
+    Stochastically generate multiple companions,
+    according to distributions in Moe&di Stefano 2017
+
+    :param m: Primary mass [solar masses]
+    :param pmax: Maximum period [days]
+    :param qmin: Minimum mass ratio (0.1 recommended)
+    :param ncomp: Maximum number of companions to generate
+
+    :return: List of companion properties. Each row contains period (days), sma (au), eccentricity, mass ratio, and
+    companion mass (solar masses). If no companions are generate then return a list of -1's
+    """
     dlp = 0.1
     bins_lp = np.arange(0, np.log10(pmax), dlp)
     
