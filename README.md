@@ -1,4 +1,4 @@
-Stochastically generate multiple systems following the prescriptions in Moe and Di Stefano 2017, using the function 
+Stochastically generate multiple systems following the prescriptions in [Moe and Di Stefano 2017](https://ui.adsabs.harvard.edu/abs/2017ApJS..230...15M/abstract "Moe and Di Stefano 2017"), using the function 
 "gen_mult" 
 
 This function takes: Primary mass [solar masses], Maximum period [days], Minimum mass ratio (0.1 recommended), Maximum number of companions to generate.
