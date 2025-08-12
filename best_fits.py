@@ -242,7 +242,7 @@ def f1(m):
 
 @njit('float64(float64)')
 def f2(m):
-    return 0.039+0.07*np.log10(m)+0.01*np.log10(m)**3.
+    return 0.039+0.07*np.log10(m)+0.01*np.log10(m)**2.
 
 @njit('float64(float64)')
 def f3(m):
